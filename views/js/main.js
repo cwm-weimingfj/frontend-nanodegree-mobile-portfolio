@@ -460,6 +460,13 @@ var resizePizzas = function(size) {
 
         }
 
+        /**
+         * Explain
+         * get the elements value before iteration.
+         * Also use percentage instead of pixel calculation.
+         * Remove unnecessary determineDx function.
+         */
+
         var randomPizzas = document.querySelectorAll(".randomPizzaContainer");
 
         for (var i = 0; i < randomPizzas.length; i++) {
@@ -514,6 +521,11 @@ function updatePositions() {
 
     var items = document.querySelectorAll('.mover');
 
+    /*
+     * Explain:
+     * Calculate scrolltop value before the iteration.
+     * Avoid layout thrashing.
+     */
     var scrolltop = document.body.scrollTop;
 
     for (var i = 0; i < items.length; i++) {
