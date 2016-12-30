@@ -480,14 +480,20 @@ var resizePizzas = function(size) {
     window.performance.mark("mark_end_resize");
     window.performance.measure("measure_pizza_resize", "mark_start_resize", "mark_end_resize");
     var timeToResize = window.performance.getEntriesByName("measure_pizza_resize");
-    console.log("Time to resize pizzas: " + timeToResize[timeToResize.length - 1].duration + "ms");
+    // console.log("Time to resize pizzas: " + timeToResize[timeToResize.length - 1].duration + "ms");
 };
 
 window.performance.mark("mark_start_generating"); // collect timing data
 
 // This for-loop actually creates and appends all of the pizzas when the page loads
+/**
+ * Explain
+ * Avoid to get pizzasDiv for each iteration which is wasting resources.
+ * Calculate once before sending to loop.
+ *
+ */
+var pizzasDiv = document.getElementById("randomPizzas");
 for (var i = 2; i < 100; i++) {
-    var pizzasDiv = document.getElementById("randomPizzas");
     pizzasDiv.appendChild(pizzaElementGenerator(i));
 }
 
@@ -495,7 +501,7 @@ for (var i = 2; i < 100; i++) {
 window.performance.mark("mark_end_generating");
 window.performance.measure("measure_pizza_generation", "mark_start_generating", "mark_end_generating");
 var timeToGenerate = window.performance.getEntriesByName("measure_pizza_generation");
-console.log("Time to generate pizzas on load: " + timeToGenerate[0].duration + "ms");
+// console.log("Time to generate pizzas on load: " + timeToGenerate[0].duration + "ms");
 
 // Iterator for number of times the pizzas in the background have scrolled.
 // Used by updatePositions() to decide when to log the average time per frame
@@ -518,9 +524,7 @@ function logAverageFrame(times) { // times is the array of User Timing measureme
 function updatePositions() {
     frame++;
     window.performance.mark("mark_start_frame");
-
     var items = document.querySelectorAll('.mover');
-
     /*
      * Explain:
      * Calculate scrolltop value before the iteration.
@@ -539,26 +543,80 @@ function updatePositions() {
     window.performance.measure("measure_frame_duration", "mark_start_frame", "mark_end_frame");
     if (frame % 10 === 0) {
         var timesToUpdatePosition = window.performance.getEntriesByName("measure_frame_duration");
-        logAverageFrame(timesToUpdatePosition);
+        //        logAverageFrame(timesToUpdatePosition);
+    }
+}
+
+// Custom function
+// Generate sliding pizzas
+function generateSlidingPizzas() {
+    // number of pizza each row
+    var cols = 8;
+
+    // spacing of each row
+    var s = 256;
+
+    // Sliding Pizza image dimentions
+    var pizzaWidth = 73;
+    var pizzaHeight = 100;
+
+    // Calculate number of rows of sliding pizza should be shown in user's
+    // present windows size.
+    // reference: calculation method:
+    // http://stackoverflow.com/questions/4512306/get-decimal-portion-of-a-number-with-javascript
+    //
+    var innerHeight = window.innerHeight;
+    print("window height", innerHeight);
+    var x = innerHeight / s;
+    var xFloor = Math.floor(x);
+    print("x", x);
+    var decimals = x - xFloor;
+    var decimalPlaces = x.toString().split('.')[1].length;
+    decimals = decimals.toFixed(decimalPlaces);
+    print("decimals", decimals);
+    var remainderHeight = s * decimals;
+    print("remainder height", remainderHeight);
+    // we can adjust the threshold "6" of determine when to showing the very
+    // last row.
+    var y = (remainderHeight - pizzaHeight / 6) >= 0 ? 1 : 0;
+    print("y", y);
+    var numOfRowsPizza = xFloor + y;
+    print("number of rows for sliding pizza", numOfRowsPizza);
+
+    // Dynamic create html, eg
+    // <img class="mover" src="images/pizza.png" style="height: 100px;
+    //      width: 73.333px; top: 5888px; left: 1355.26px;">
+
+    // Total number of pizza to show in current window size
+    var totalNumberOfPizza = numOfRowsPizza * cols;
+    print("total sliding pizza", totalNumberOfPizza);
+
+    for (var i = 0; i <= totalNumberOfPizza; i++) {
+        var elem = document.createElement('img');
+        elem.className = 'mover';
+        elem.src = "images/pizza.png";
+        elem.style.width = pizzaWidth + "px";
+        elem.style.height = pizzaHeight + "px";
+        // elem.style.height = "100px";
+        // elem.style.width = "73.333px";
+        elem.basicLeft = (i % cols) * s;
+        elem.style.top = (Math.floor(i / cols) * s) + 'px';
+        document.querySelector("#movingPizzas1").appendChild(elem);
     }
 }
 
 // runs updatePositions on scroll
 window.addEventListener('scroll', updatePositions);
 
+
 // Generates the sliding pizzas when the page loads.
 document.addEventListener('DOMContentLoaded', function() {
-    var cols = 8;
-    var s = 256;
-    for (var i = 0; i < 200; i++) {
-        var elem = document.createElement('img');
-        elem.className = 'mover';
-        elem.src = "images/pizza.png";
-        elem.style.height = "100px";
-        elem.style.width = "73.333px";
-        elem.basicLeft = (i % cols) * s;
-        elem.style.top = (Math.floor(i / cols) * s) + 'px';
-        document.querySelector("#movingPizzas1").appendChild(elem);
-    }
+    generateSlidingPizzas();
     updatePositions();
 });
+
+
+// debug
+function print(text, value) {
+    console.log(text.toUpperCase() + ": " + value);
+}
